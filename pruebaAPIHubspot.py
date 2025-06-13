@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Request
 import requests
 import os
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
-# Token de HubSpot (lo ideal es usar variables de entorno en producción)
 HUBSPOT_TOKEN = os.getenv("HUBSPOT_TOKEN")
 HUBSPOT_URL = "https://api.hubapi.com/crm/v3/objects/contacts"
 HEADERS = {
@@ -14,26 +17,30 @@ HEADERS = {
 
 @app.post("/nuevo-lead")
 async def nuevo_lead(request: Request):
-    body = await request.json()
-    print("DATA RECIBIDA:", body) 
-    nombre = body.get("nombre")
-    email = body.get("email")
-    telefono = body.get("telefono")
-    calificacion = body.get("calificacion")
+    data = await request.json()
 
-    # Si no quieres descomponer "calificacion", lo metes todo en un campo tipo texto
+    nombre = data.get("nombre")
+    email = data.get("email")
+    telefono = data.get("telefono")
+
+    # Extrae todos los campos extra como calificación dinámica
+    calificacion_dinamica = {
+        k: v for k, v in data.items()
+        if k not in ["nombre", "email", "telefono"]
+    }
+
     payload = {
         "properties": {
             "firstname": nombre,
             "email": email,
             "phone": telefono,
-            "calificacion": str(calificacion)  # Como texto
+            "calificacion": json.dumps(calificacion_dinamica)
         }
     }
 
-    res = requests.post(HUBSPOT_URL, headers=HEADERS, json=payload)
+    response = requests.post(HUBSPOT_URL, headers=HEADERS, json=payload)
 
     return {
-        "hubspot_status": res.status_code,
-        "hubspot_response": res.json()
+        "status": response.status_code,
+        "hubspot": response.json()
     }
