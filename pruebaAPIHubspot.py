@@ -15,7 +15,7 @@ HEADERS = {
 @app.post("/nuevo-lead")
 async def nuevo_lead(request: Request):
     body = await request.json()
-
+    print("DATA RECIBIDA:", body) 
     nombre = body.get("nombre")
     email = body.get("email")
     telefono = body.get("telefono")
