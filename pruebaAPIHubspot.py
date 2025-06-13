@@ -5,7 +5,7 @@ import os
 app = FastAPI()
 
 # Token de HubSpot (lo ideal es usar variables de entorno en producción)
-HUBSPOT_TOKEN = "pat-na1-11a676c3-11f6-4d29-83dc-d15c3f0544f6"
+HUBSPOT_TOKEN = "os.getenv("HUBSPOT_TOKEN")"
 HUBSPOT_URL = "https://api.hubapi.com/crm/v3/objects/contacts"
 HEADERS = {
     "Authorization": f"Bearer {HUBSPOT_TOKEN}",
