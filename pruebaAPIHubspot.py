@@ -15,6 +15,7 @@ HEADERS = {
 async def nuevo_lead(request: Request):
     try:
         body = await request.json()
+        logging.warning(f"Body recibido: {body}")  # <- esto sí se captura
         print("BODY RECIBIDO:", body)  # 👈 Esto te mostrará lo que llega exactamente
 
         email = body.get("email")
