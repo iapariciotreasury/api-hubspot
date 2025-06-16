@@ -21,7 +21,7 @@ async def nuevo_lead(request: Request):
     telefono = body.get("telefono")
     calificacion = body.get("calificacion")
 
-    # Buscar contacto por email
+    # 1. Buscar contacto por email
     search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
     search_body = {
         "filterGroups": [{
@@ -38,7 +38,7 @@ async def nuevo_lead(request: Request):
     if search_response.status_code == 200:
         results = search_response.json().get("results", [])
         if results:
-            # Contacto encontrado → actualizar
+            # 2. Contacto encontrado → actualizar campo
             contact_id = results[0]["id"]
             update_url = f"{HUBSPOT_URL}/{contact_id}"
             update_payload = {
@@ -52,8 +52,14 @@ async def nuevo_lead(request: Request):
                 "contact_id": contact_id,
                 "response": update_response.json()
             }
+    else:
+        # Error en búsqueda
+        return {
+            "status": "search_error",
+            "detail": search_response.text
+        }
 
-    # Contacto no encontrado → crear
+    # 3. Contacto no encontrado → crear uno nuevo
     create_payload = {
         "properties": {
             "firstname": nombre,
