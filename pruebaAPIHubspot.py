@@ -5,48 +5,66 @@ import os
 app = FastAPI()
 
 HUBSPOT_TOKEN = os.getenv("HUBSPOT_TOKEN")
+HUBSPOT_URL = "https://api.hubapi.com/crm/v3/objects/contacts"
 HEADERS = {
     "Authorization": f"Bearer {HUBSPOT_TOKEN}",
     "Content-Type": "application/json"
 }
 
+
 @app.post("/nuevo-lead")
 async def nuevo_lead(request: Request):
     body = await request.json()
+
+    nombre = body.get("nombre")
     email = body.get("email")
+    telefono = body.get("telefono")
     calificacion = body.get("calificacion")
 
     # Buscar contacto por email
     search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
-    search_payload = {
+    search_body = {
         "filterGroups": [{
             "filters": [{
                 "propertyName": "email",
                 "operator": "EQ",
                 "value": email
             }]
-        }],
-        "properties": ["email"]
+        }]
     }
-    search_res = requests.post(search_url, headers=HEADERS, json=search_payload)
-    results = search_res.json().get("results", [])
 
-    if not results:
-        return {"error": "Contacto no encontrado con ese email"}
+    search_response = requests.post(search_url, headers=HEADERS, json=search_body)
 
-    contact_id = results[0]["id"]
+    if search_response.status_code == 200:
+        results = search_response.json().get("results", [])
+        if results:
+            # Contacto encontrado → actualizar
+            contact_id = results[0]["id"]
+            update_url = f"{HUBSPOT_URL}/{contact_id}"
+            update_payload = {
+                "properties": {
+                    "calificacion": calificacion
+                }
+            }
+            update_response = requests.patch(update_url, headers=HEADERS, json=update_payload)
+            return {
+                "status": "updated",
+                "contact_id": contact_id,
+                "response": update_response.json()
+            }
 
-    # Actualizar campo calificación
-    update_url = f"https://api.hubapi.com/crm/v3/objects/contacts/{contact_id}"
-    update_payload = {
+    # Contacto no encontrado → crear
+    create_payload = {
         "properties": {
+            "firstname": nombre,
+            "email": email,
+            "phone": telefono,
             "calificacion": calificacion
         }
     }
-    update_res = requests.patch(update_url, headers=HEADERS, json=update_payload)
+    create_response = requests.post(HUBSPOT_URL, headers=HEADERS, json=create_payload)
 
     return {
-        "mensaje": f"Contacto actualizado con calificación: {calificacion}",
-        "hubspot_status": update_res.status_code,
-        "hubspot_response": update_res.json()
+        "status": "created",
+        "response": create_response.json()
     }
