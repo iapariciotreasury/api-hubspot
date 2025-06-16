@@ -5,7 +5,6 @@ import os
 app = FastAPI()
 
 HUBSPOT_TOKEN = os.getenv("HUBSPOT_TOKEN")
-HUBSPOT_URL = "https://api.hubapi.com/crm/v3/objects/contacts"
 HEADERS = {
     "Authorization": f"Bearer {HUBSPOT_TOKEN}",
     "Content-Type": "application/json"
@@ -14,24 +13,40 @@ HEADERS = {
 @app.post("/nuevo-lead")
 async def nuevo_lead(request: Request):
     body = await request.json()
-
-    nombre = body.get("nombre")
     email = body.get("email")
-    telefono = body.get("telefono")
-    calificacion = body.get("calificacion")  # ← JSON enviado por Sintonai
+    calificacion = body.get("calificacion")
 
-    payload = {
+    # Buscar contacto por email
+    search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
+    search_payload = {
+        "filterGroups": [{
+            "filters": [{
+                "propertyName": "email",
+                "operator": "EQ",
+                "value": email
+            }]
+        }],
+        "properties": ["email"]
+    }
+    search_res = requests.post(search_url, headers=HEADERS, json=search_payload)
+    results = search_res.json().get("results", [])
+
+    if not results:
+        return {"error": "Contacto no encontrado con ese email"}
+
+    contact_id = results[0]["id"]
+
+    # Actualizar campo calificación
+    update_url = f"https://api.hubapi.com/crm/v3/objects/contacts/{contact_id}"
+    update_payload = {
         "properties": {
-            "firstname": nombre,
-            "email": email,
-            "phone": telefono,
             "calificacion": calificacion
         }
     }
-
-    res = requests.post(HUBSPOT_URL, headers=HEADERS, json=payload)
+    update_res = requests.patch(update_url, headers=HEADERS, json=update_payload)
 
     return {
-        "hubspot_status": res.status_code,
-        "hubspot_response": res.json()
+        "mensaje": f"Contacto actualizado con calificación: {calificacion}",
+        "hubspot_status": update_res.status_code,
+        "hubspot_response": update_res.json()
     }
