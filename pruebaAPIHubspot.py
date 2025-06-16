@@ -42,7 +42,12 @@ async def nuevo_lead(request: Request):
                     }
                 }
                 update_response = requests.patch(update_url, headers=HEADERS, json=update_payload)
-                return {"status": "ok"}  # <- importante para que SintonAI no se quede colgado
+                return {
+                    "status": "ok",
+                    "hubspot_status": update_response.status_code,
+                    "hubspot_response": update_response.json()
+                }
+
 
         return {"status": "not_found"}
 
