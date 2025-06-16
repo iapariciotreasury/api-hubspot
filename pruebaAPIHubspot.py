@@ -1,10 +1,6 @@
 from fastapi import FastAPI, Request
 import requests
 import os
-import json
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI()
 
@@ -17,24 +13,25 @@ HEADERS = {
 
 @app.post("/nuevo-lead")
 async def nuevo_lead(request: Request):
-    data = await request.json()
+    body = await request.json()
 
-    nombre = data.get("nombre")
-    email = data.get("email")
-    telefono = data.get("telefono")
-
-    # Extraer el resto de campos y convertirlos en texto
-    campos_extra = {k: v for k, v in data.items() if k not in ["nombre", "email", "telefono"]}
-    calificacion_texto = ", ".join([f"{k}: {v}" for k, v in campos_extra.items()])
+    nombre = body.get("nombre")
+    email = body.get("email")
+    telefono = body.get("telefono")
+    calificacion = body.get("calificacion")  # ← JSON enviado por Sintonai
 
     payload = {
         "properties": {
             "firstname": nombre,
             "email": email,
             "phone": telefono,
-            "calificacion": calificacion_texto
+            "calificacion": calificacion
         }
     }
 
-    response = requests.post(HUBSPOT_URL, headers=HEADERS, json=payload)
-    return {"status": response.status_code, "hubspot": response.json()}
+    res = requests.post(HUBSPOT_URL, headers=HEADERS, json=payload)
+
+    return {
+        "hubspot_status": res.status_code,
+        "hubspot_response": res.json()
+    }
