@@ -15,6 +15,8 @@ HEADERS = {
 async def nuevo_lead(request: Request):
     try:
         body = await request.json()
+        print("BODY RECIBIDO:", body)  # 👈 Esto te mostrará lo que llega exactamente
+
         email = body.get("email")
         calificacion = body.get("calificacion")
 
@@ -47,7 +49,6 @@ async def nuevo_lead(request: Request):
                     "hubspot_status": update_response.status_code,
                     "hubspot_response": update_response.json()
                 }
-
 
         return {"status": "not_found"}
 
