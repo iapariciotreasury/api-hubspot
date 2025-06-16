@@ -15,13 +15,12 @@ HEADERS = {
 @app.post("/nuevo-lead")
 async def nuevo_lead(request: Request):
     body = await request.json()
-
     nombre = body.get("nombre")
     email = body.get("email")
     telefono = body.get("telefono")
     calificacion = body.get("calificacion")
 
-    # 1. Buscar contacto por email
+    # Buscar contacto por email
     search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
     search_body = {
         "filterGroups": [{
@@ -38,7 +37,7 @@ async def nuevo_lead(request: Request):
     if search_response.status_code == 200:
         results = search_response.json().get("results", [])
         if results:
-            # 2. Contacto encontrado → actualizar campo
+            # Contacto encontrado → actualizar
             contact_id = results[0]["id"]
             update_url = f"{HUBSPOT_URL}/{contact_id}"
             update_payload = {
@@ -52,15 +51,8 @@ async def nuevo_lead(request: Request):
                 "contact_id": contact_id,
                 "response": update_response.json()
             }
-    else:
-    return {
-        "status": "search_error",
-        "code": search_response.status_code,
-        "detail": search_response.text
-    }
 
-
-    # 3. Contacto no encontrado → crear uno nuevo
+    # Contacto no encontrado → crear
     create_payload = {
         "properties": {
             "firstname": nombre,
