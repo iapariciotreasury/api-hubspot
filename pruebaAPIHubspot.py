@@ -53,11 +53,12 @@ async def nuevo_lead(request: Request):
                 "response": update_response.json()
             }
     else:
-        # Error en búsqueda
-        return {
-            "status": "search_error",
-            "detail": search_response.text
-        }
+    return {
+        "status": "search_error",
+        "code": search_response.status_code,
+        "detail": search_response.text
+    }
+
 
     # 3. Contacto no encontrado → crear uno nuevo
     create_payload = {
